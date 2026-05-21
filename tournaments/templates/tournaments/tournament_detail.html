@@ -1,0 +1,216 @@
+{% extends 'tournaments/base.html' %}
+{% load static %}
+
+{% block title %}{{ tournament.title }} — Zed Tourneys{% endblock %}
+
+{% block content %}
+<div class="container">
+
+  <!-- TOURNAMENT HERO -->
+  <div class="tournament-hero">
+    <div class="tournament-hero-inner">
+
+      <div>
+        <div class="t-badges">
+          <span class="badge badge-{{ tournament.status }}">{{ tournament.get_status_display }}</span>
+          <span class="badge-game">{{ tournament.get_game_display }}</span>
+          {% if tournament.game_mode %}
+            <span class="badge-game">{{ tournament.game_mode }}</span>
+          {% endif %}
+          <span class="badge-game">{{ tournament.get_format_display }}</span>
+        </div>
+
+        <h1 class="t-title">{{ tournament.title }}</h1>
+
+        {% if tournament.description %}
+          <p class="t-desc">{{ tournament.description }}</p>
+        {% endif %}
+
+        <div class="flex gap-3 mt-6" style="flex-wrap:wrap;">
+          {% if tournament.bracket_generated %}
+            <a href="{% url 'bracket_view' tournament.pk %}" class="btn btn-primary">
+              ⚡ View Bracket
+            </a>
+          {% endif %}
+
+          {% if tournament.discord_link %}
+            <a href="{{ tournament.discord_link }}" target="_blank" class="btn btn-outline">
+              💬 Tournament Discord
+            </a>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- STATS BOX -->
+      <div class="t-stats-box">
+        <div class="t-stat">
+          <div class="t-stat-num">{{ tournament.prize_currency }} {{ tournament.prize_pool|floatformat:0 }}</div>
+          <div class="t-stat-label">Prize Pool</div>
+        </div>
+        <hr class="divider" style="margin:0">
+        <div class="t-stat">
+          <div class="t-stat-num">{{ tournament.player_count }} / {{ tournament.max_players }}</div>
+          <div class="t-stat-label">Players</div>
+        </div>
+        <hr class="divider" style="margin:0">
+        <div class="t-stat">
+          <div class="t-stat-num">BO{{ tournament.best_of }}</div>
+          <div class="t-stat-label">Match Format</div>
+        </div>
+        <hr class="divider" style="margin:0">
+        <div class="t-stat">
+          <div class="t-stat-num" style="font-size:1.1rem">{{ tournament.start_date|date:"d M" }}</div>
+          <div class="t-stat-label">{{ tournament.start_date|date:"H:i" }} CAT</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MAIN GRID -->
+  <div class="t-grid">
+
+    <!-- LEFT: INFO + PLAYERS -->
+    <div>
+
+      {% if tournament.rules %}
+        <div class="t-section">
+          <div class="t-section-title">📋 Rules & Format</div>
+          <div style="font-size:0.9rem; color:var(--text-2); line-height:1.8; white-space:pre-line">
+            {{ tournament.rules }}
+          </div>
+        </div>
+      {% endif %}
+
+      <!-- PLAYER LIST -->
+      <div class="t-section">
+        <div class="t-section-title">👥 Registered Players ({{ tournament.player_count }})</div>
+
+        {% if tournament.registrations.all %}
+          <ul class="player-list">
+            {% for reg in tournament.registrations.all %}
+              <li class="player-item">
+                <span class="player-num">#{{ forloop.counter }}</span>
+                <span class="player-tag">{{ reg.game_tag }}</span>
+                <span class="player-checkin {% if not reg.checked_in %}no{% endif %}">
+                  {% if reg.checked_in %}✓ Checked In{% else %}Not Checked In{% endif %}
+                </span>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <div class="empty-state" style="padding: 32px 0">
+            <p>No players registered yet. Be the first!</p>
+          </div>
+        {% endif %}
+      </div>
+
+    </div>
+
+    <!-- RIGHT: JOIN CARD -->
+    <div>
+      <div class="join-card">
+        <div class="join-card-head">
+          <div class="join-card-title">
+            {% if tournament.status == 'open' %}⚡ Registration Open{% elif tournament.status == 'live' %}🔴 Tournament Live{% elif tournament.status == 'complete' %}✓ Tournament Complete{% else %}🔒 Registration Closed{% endif %}
+          </div>
+        </div>
+
+        <div class="join-card-body">
+
+          <!-- INFO ROWS -->
+          <div class="info-row">
+            <span class="info-label">Game</span>
+            <span class="info-value">{{ tournament.get_game_display }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Format</span>
+            <span class="info-value">{{ tournament.get_format_display }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Match BO</span>
+            <span class="info-value">Best of {{ tournament.best_of }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Finals BO</span>
+            <span class="info-value">Best of {{ tournament.finals_best_of }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Max Players</span>
+            <span class="info-value">{{ tournament.max_players }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Slots Left</span>
+            <span class="info-value {% if tournament.is_full %}text-lose{% else %}text-win{% endif %}">
+              {% if tournament.is_full %}
+                FULL
+              {% else %}
+                {{ tournament.max_players|add:tournament.player_count|add:"-999999" }}
+                {% comment %}simple calc{% endcomment %}
+                {{ tournament.max_players }} - {{ tournament.player_count }} open
+              {% endif %}
+            </span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Start</span>
+            <span class="info-value">{{ tournament.start_date|date:"d M Y, H:i" }}</span>
+          </div>
+
+          <hr class="divider">
+
+          <!-- JOIN FORM / STATUS -->
+          {% if tournament.status == 'open' %}
+            {% if user.is_authenticated %}
+              {% if user_registered %}
+                <div class="alert alert-success mb-4">✓ You're registered for this tournament!</div>
+                {% if not tournament.bracket_generated %}
+                  <p style="font-size:0.82rem; color:var(--text-3); margin-bottom:12px">
+                    Bracket will be generated once registration closes. Check back soon.
+                  </p>
+                {% endif %}
+              {% elif tournament.is_full %}
+                <div class="alert alert-warning">Tournament is full.</div>
+              {% else %}
+                <form method="post" action="{% url 'join_tournament' tournament.pk %}">
+                  {% csrf_token %}
+                  <div class="form-group">
+                    <label for="game_tag">Your In-Game Tag</label>
+                    <input type="text" id="game_tag" name="game_tag"
+                           placeholder="e.g. xXSniper99Xx"
+                           value="{{ user.username }}" required>
+                    <div class="form-hint">The name your opponents will see in the bracket.</div>
+                  </div>
+                  <button type="submit" class="btn btn-primary btn-block btn-lg">
+                    🎮 Join Tournament
+                  </button>
+                </form>
+              {% endif %}
+            {% else %}
+              <p style="font-size:0.9rem; color:var(--text-2); margin-bottom:14px; text-align:center">
+                You need an account to join.
+              </p>
+              <a href="{% url 'login' %}?next={{ request.path }}" class="btn btn-primary btn-block">Login to Register</a>
+              <a href="{% url 'signup' %}" class="btn btn-ghost btn-block mt-4">Create Account</a>
+            {% endif %}
+
+          {% elif tournament.status == 'live' and tournament.bracket_generated %}
+            <a href="{% url 'bracket_view' tournament.pk %}" class="btn btn-primary btn-block btn-lg">
+              ⚡ View Live Bracket
+            </a>
+
+          {% elif tournament.status == 'complete' %}
+            <a href="{% url 'bracket_view' tournament.pk %}" class="btn btn-ghost btn-block">
+              View Final Results
+            </a>
+
+          {% else %}
+            <div class="alert alert-warning">Registration is currently closed.</div>
+          {% endif %}
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

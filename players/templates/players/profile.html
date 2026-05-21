@@ -1,0 +1,93 @@
+{% extends 'tournaments/base.html' %}
+{% load static %}
+
+{% block title %}{{ profile_user.username }} — Zed Tourneys{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div style="padding: 48px 0 80px">
+
+    <!-- PROFILE HEADER -->
+    <div style="display:flex; align-items:flex-start; gap:24px; margin-bottom:40px; padding-bottom:40px; border-bottom:1px solid var(--border); flex-wrap:wrap">
+
+      <!-- AVATAR -->
+      <div style="width:80px; height:80px; border-radius:var(--radius); background:var(--surface-2); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-family:var(--font-head); font-size:2.4rem; font-weight:900; color:var(--accent); flex-shrink:0; text-transform:uppercase">
+        {{ profile_user.username|first }}
+      </div>
+
+      <div style="flex:1">
+        <h1 style="font-size:2.4rem; margin-bottom:4px">{{ profile_user.username }}</h1>
+        <p style="color:var(--text-2); font-size:0.88rem">Member since {{ profile_user.date_joined|date:"M Y" }}</p>
+
+        <div class="flex gap-3 mt-6" style="flex-wrap:wrap">
+          <div style="text-align:center; padding:12px 20px; background:var(--surface-2); border:1px solid var(--border); border-radius:var(--radius-sm)">
+            <div style="font-family:var(--font-head); font-size:1.8rem; font-weight:900; color:var(--accent)">
+              {{ registrations.count }}
+            </div>
+            <div style="font-size:0.72rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--text-3)">Tournaments Entered</div>
+          </div>
+          <div style="text-align:center; padding:12px 20px; background:var(--surface-2); border:1px solid var(--border); border-radius:var(--radius-sm)">
+            <div style="font-family:var(--font-head); font-size:1.8rem; font-weight:900; color:var(--win)">
+              {{ wins_count|default:"0" }}
+            </div>
+            <div style="font-size:0.72rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--text-3)">Matches Won</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- TOURNAMENT HISTORY -->
+    <h2 style="font-size:1.4rem; margin-bottom:20px">Tournament History</h2>
+
+    {% if registrations %}
+      <div class="tournament-grid">
+        {% for reg in registrations %}
+          <a href="{% url 'tournament_detail' reg.tournament.pk %}" style="text-decoration:none; color:inherit">
+            <div class="tournament-card">
+              <div class="card-game-bar {{ reg.tournament.game }}"></div>
+              <div class="card-inner">
+                <div class="card-top">
+                  <div class="card-title">{{ reg.tournament.title }}</div>
+                  <span class="badge badge-{{ reg.tournament.status }}">{{ reg.tournament.get_status_display }}</span>
+                </div>
+                <div class="card-meta">
+                  <div class="card-meta-row">
+                    <span>🎮 {{ reg.tournament.get_game_display }}</span>
+                  </div>
+                  <div class="card-meta-row">
+                    <span>🏷️ Playing as <strong>{{ reg.game_tag }}</strong></span>
+                  </div>
+                  <div class="card-meta-row">
+                    <span>📅 {{ reg.tournament.start_date|date:"d M Y" }}</span>
+                  </div>
+                </div>
+                <div class="card-bottom">
+                  <span style="font-size:0.82rem; color:var(--text-2)">
+                    Registered {{ reg.registered_at|date:"d M" }}
+                  </span>
+                  {% if reg.tournament.bracket_generated %}
+                    <a href="{% url 'bracket_view' reg.tournament.pk %}" class="btn btn-outline btn-sm">View Bracket →</a>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </a>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <div class="empty-icon">🎮</div>
+        <h3>No tournaments yet</h3>
+        <p>{{ profile_user.username }} hasn't entered any tournaments.</p>
+        {% if user == profile_user %}
+          <a href="{% url 'tournament_list' %}?status=open" class="btn btn-primary mt-6">
+            Browse Open Tournaments
+          </a>
+        {% endif %}
+      </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}

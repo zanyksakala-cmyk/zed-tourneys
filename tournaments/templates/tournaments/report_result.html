@@ -1,0 +1,104 @@
+{% extends 'tournaments/base.html' %}
+{% load static %}
+
+{% block title %}Report Result — Zed Tourneys{% endblock %}
+
+{% block content %}
+<div class="container-sm">
+  <div style="padding: 48px 0;">
+
+    <div class="eyebrow" style="margin-bottom:10px">Admin Action</div>
+    <h1 style="margin-bottom:8px">Report Match Result</h1>
+    <p style="color:var(--text-2); margin-bottom:40px">
+      Round {{ match.round_number }} · Match {{ match.match_number }} ·
+      <span class="badge-game">BO{{ match.best_of }}</span>
+    </p>
+
+    <div class="result-form">
+
+      <form method="post">
+        {% csrf_token %}
+
+        <!-- VS DISPLAY -->
+        <div style="margin-bottom:28px">
+          <div style="font-family:var(--font-semi); font-size:0.78rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--text-2); margin-bottom:12px">
+            Select Winner
+          </div>
+
+          <div class="vs-container">
+
+            <!-- PLAYER 1 -->
+            <label class="player-choice" id="choice-1">
+              <input type="radio" name="winner" value="{{ match.player1.pk }}"
+                     onchange="selectWinner(1)" required>
+              <div class="player-choice-name">{{ match.player1.game_tag }}</div>
+              <div style="font-size:0.75rem; color:var(--text-3)">Player 1</div>
+            </label>
+
+            <div class="vs-divider">VS</div>
+
+            <!-- PLAYER 2 -->
+            <label class="player-choice" id="choice-2">
+              <input type="radio" name="winner" value="{{ match.player2.pk }}"
+                     onchange="selectWinner(2)" required>
+              <div class="player-choice-name">{{ match.player2.game_tag }}</div>
+              <div style="font-size:0.75rem; color:var(--text-3)">Player 2</div>
+            </label>
+
+          </div>
+        </div>
+
+        <!-- SCORES -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:24px">
+          <div class="form-group" style="margin-bottom:0">
+            <label for="score_p1">{{ match.player1.game_tag }} Score</label>
+            <input type="number" id="score_p1" name="score_p1"
+                   min="0" max="{{ match.best_of }}" value="0" required>
+            <div class="form-hint">Wins in this match</div>
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label for="score_p2">{{ match.player2.game_tag }} Score</label>
+            <input type="number" id="score_p2" name="score_p2"
+                   min="0" max="{{ match.best_of }}" value="0" required>
+            <div class="form-hint">Wins in this match</div>
+          </div>
+        </div>
+
+        <!-- BO GUIDE -->
+        <div style="background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm); padding:12px 14px; margin-bottom:24px; font-size:0.82rem; color:var(--text-3)">
+          <strong style="color:var(--text-2)">BO{{ match.best_of }} win condition:</strong>
+          First to {{ match.best_of|add:1|floatformat:0 }}
+          {% if match.best_of == 1 %}1{% elif match.best_of == 3 %}2{% elif match.best_of == 5 %}3{% elif match.best_of == 7 %}4{% elif match.best_of == 9 %}5{% else %}{{ match.best_of }}{% endif %}
+          win{{ match.best_of|add:1|pluralize }} advances.
+        </div>
+
+        <!-- ACTIONS -->
+        <div class="flex gap-3">
+          <button type="submit" class="btn btn-primary btn-lg" style="flex:1">
+            ⚡ Confirm & Advance Winner
+          </button>
+          <a href="{% url 'bracket_view' match.bracket.tournament.pk %}"
+             class="btn btn-ghost btn-lg">
+            Cancel
+          </a>
+        </div>
+
+        <p style="font-size:0.78rem; color:var(--text-3); margin-top:12px; text-align:center">
+          This action is immediate and will update the bracket. Double-check scores before confirming.
+        </p>
+
+      </form>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function selectWinner(num) {
+  document.getElementById('choice-1').classList.toggle('selected', num === 1);
+  document.getElementById('choice-2').classList.toggle('selected', num === 2);
+}
+</script>
+{% endblock %}

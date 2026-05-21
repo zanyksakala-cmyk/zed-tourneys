@@ -1,0 +1,188 @@
+{% extends 'tournaments/base.html' %}
+{% load static %}
+
+{% block title %}Zed Tourneys — Zambia Esports Tournaments{% endblock %}
+
+{% block content %}
+
+<!-- HERO -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-inner">
+
+      <div class="hero-tag">
+        ⚡ Zambia's #1 Esports Platform
+      </div>
+
+      <h1>
+        COMPETE.<br>
+        <span class="hero-line-2">WIN.</span><br>
+        DOMINATE.
+      </h1>
+
+      <p>
+        Join live tournaments across Fortnite, CODM, EA Sports FC, Mortal Kombat and Apex Legends.
+        Real brackets. Real prize pools. Real competition.
+      </p>
+
+      <div class="hero-cta">
+        <a href="{% url 'tournament_list' %}?status=open" class="btn btn-primary btn-lg">
+          🎮 Join a Tournament
+        </a>
+        <a href="{% url 'tournament_list' %}" class="btn btn-ghost btn-lg">
+          View All Events
+        </a>
+      </div>
+
+      <div class="hero-stats">
+        <div>
+          <div class="hero-stat-num">{{ total_tournaments|default:"0" }}+</div>
+          <div class="hero-stat-label">Tournaments Run</div>
+        </div>
+        <div>
+          <div class="hero-stat-num">{{ total_players|default:"0" }}+</div>
+          <div class="hero-stat-label">Players Registered</div>
+        </div>
+        <div>
+          <div class="hero-stat-num">5</div>
+          <div class="hero-stat-label">Games Supported</div>
+        </div>
+        <div>
+          <div class="hero-stat-num">K250+</div>
+          <div class="hero-stat-label">Prize Money Given</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- LIVE / OPEN TOURNAMENTS -->
+{% if tournaments %}
+<section class="section">
+  <div class="container">
+
+    <div class="section-head">
+      <div>
+        <div class="eyebrow">Active Now</div>
+        <h2 class="section-title">Open Tournaments<span></span></h2>
+      </div>
+      <a href="{% url 'tournament_list' %}" class="btn btn-ghost">View All →</a>
+    </div>
+
+    <div class="tournament-grid">
+      {% for t in tournaments %}
+        <a href="{% url 'tournament_detail' t.pk %}" style="text-decoration:none; color:inherit">
+          <div class="tournament-card animate-up">
+            <div class="card-game-bar {{ t.game }}"></div>
+            <div class="card-inner">
+
+              <div class="card-top">
+                <div class="card-title">{{ t.title }}</div>
+                <span class="badge badge-{{ t.status }}">{{ t.get_status_display }}</span>
+              </div>
+
+              <div class="card-meta">
+                <div class="card-meta-row">
+                  <span class="card-meta-icon">🎮</span>
+                  <span>{{ t.get_game_display }}</span>
+                  {% if t.game_mode %}
+                    <span class="badge-game">{{ t.game_mode }}</span>
+                  {% endif %}
+                </div>
+                <div class="card-meta-row">
+                  <span class="card-meta-icon">📅</span>
+                  <span>{{ t.start_date|date:"D, d M · H:i" }}</span>
+                </div>
+                <div class="card-meta-row">
+                  <span class="card-meta-icon">🏆</span>
+                  <span>{{ t.get_format_display }}</span>
+                  <span style="color:var(--text-3)">· BO{{ t.best_of }}</span>
+                </div>
+              </div>
+
+              <div class="card-prize">
+                {{ t.prize_currency }} {{ t.prize_pool|floatformat:0 }}
+                <span class="card-prize-label">Prize Pool</span>
+              </div>
+
+              {% with count=t.player_count max=t.max_players %}
+                <div class="card-progress-bar">
+                  <div class="card-progress-fill {% if count == max %}full{% endif %}"
+                       style="width: {% widthratio count max 100 %}%"></div>
+                </div>
+                <div class="card-bottom">
+                  <div class="card-slots">
+                    <strong>{{ count }}</strong> / {{ max }} players
+                  </div>
+                  <span class="btn btn-outline btn-sm">View →</span>
+                </div>
+              {% endwith %}
+
+            </div>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+
+  </div>
+</section>
+{% endif %}
+
+<!-- GAMES WE SUPPORT -->
+<section class="section" style="border-top: 1px solid var(--border); background: var(--surface)">
+  <div class="container">
+
+    <div class="section-head">
+      <div>
+        <div class="eyebrow">Supported Games</div>
+        <h2 class="section-title">Pick Your Game<span></span></h2>
+      </div>
+    </div>
+
+    <div class="games-grid">
+      <a href="{% url 'tournament_list' %}?game=fortnite" class="game-card">
+        <span class="game-icon">🌀</span>
+        <div class="game-title">Fortnite</div>
+        <div class="game-count">1v1 · Duos · Trios</div>
+      </a>
+      <a href="{% url 'tournament_list' %}?game=codm" class="game-card">
+        <span class="game-icon">🔫</span>
+        <div class="game-title">CODM</div>
+        <div class="game-count">MP · S&D · BR</div>
+      </a>
+      <a href="{% url 'tournament_list' %}?game=fc" class="game-card">
+        <span class="game-icon">⚽</span>
+        <div class="game-title">EA Sports FC</div>
+        <div class="game-count">1v1 · Knockout</div>
+      </a>
+      <a href="{% url 'tournament_list' %}?game=mk" class="game-card">
+        <span class="game-icon">🥊</span>
+        <div class="game-title">Mortal Kombat</div>
+        <div class="game-count">1v1 · BO3 / BO5</div>
+      </a>
+      <a href="{% url 'tournament_list' %}?game=apex" class="game-card">
+        <span class="game-icon">🎯</span>
+        <div class="game-title">Apex Legends</div>
+        <div class="game-count">Trios · Kill Race</div>
+      </a>
+    </div>
+
+  </div>
+</section>
+
+<!-- DISCORD CTA -->
+<section class="section">
+  <div class="container">
+    <div class="discord-banner">
+      <div class="discord-icon">💬</div>
+      <div class="discord-text">
+        <h3>Join the Zed Tourneys Discord</h3>
+        <p>Get match alerts, find opponents, and connect with the Zambian gaming community.</p>
+      </div>
+      <a href="#" target="_blank" class="btn btn-lg">Join Discord →</a>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

@@ -1,0 +1,9 @@
+{% load static %} {% block extra_head %}{% endblock %}
+ZEDTOURNEYS ZM
+Tournaments {% if user.is_authenticated %} Profile {% if user.is_staff %} Admin {% endif %} {% csrf_token %} Logout {% else %} Login Sign Up {% endif %}
+{% if messages %}
+{% for message in messages %}
+{{ message }}
+{% endfor %}
+{% endif %}
+{% block content %}{% endblock %}

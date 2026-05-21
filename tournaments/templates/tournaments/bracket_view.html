@@ -1,0 +1,226 @@
+{% extends 'tournaments/base.html' %}
+{% load static %}
+
+{% block title %}Bracket — {{ tournament.title }}{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* Bracket connector lines via CSS */
+  .bracket-round-wrap {
+    display: flex;
+    align-items: stretch;
+  }
+
+  .bracket-connector {
+    width: 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    position: relative;
+  }
+
+  .connector-pair {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+  }
+
+  .conn-line {
+    flex: 1;
+    border-right: 1px solid var(--border-2);
+  }
+  .conn-line.top    { border-bottom: 1px solid var(--border-2); border-radius: 0 0 4px 0; }
+  .conn-line.bottom { border-top: 1px solid var(--border-2); border-radius: 0 4px 0 0; }
+  .conn-line.mid    { border-right: none; border-top: 1px solid var(--border-2); width: 24px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="bracket-page">
+
+    <!-- HEADER -->
+    <div class="bracket-header">
+      <div>
+        <div class="eyebrow">Live Bracket</div>
+        <h1>{{ tournament.title }}</h1>
+        <div class="flex gap-2 mt-4">
+          <span class="badge badge-{{ tournament.status }}">{{ tournament.get_status_display }}</span>
+          <span class="badge-game">{{ tournament.get_game_display }}</span>
+          {% if data %}
+            <span class="badge-game">{{ data.total_rounds }} Round{{ data.total_rounds|pluralize }}</span>
+            <span class="badge-game">{{ data.bracket.size }}-Player Bracket</span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="flex gap-3" style="flex-wrap:wrap">
+        <a href="{% url 'tournament_detail' tournament.pk %}" class="btn btn-ghost btn-sm">
+          ← Tournament Info
+        </a>
+        {% if user.is_staff and not tournament.bracket_generated %}
+          <a href="{% url 'admin:tournaments_tournament_changelist' %}" class="btn btn-primary btn-sm">
+            ⚡ Generate Bracket
+          </a>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- NO BRACKET STATE -->
+    {% if not data %}
+      <div class="bracket-empty">
+        <div class="empty-icon">⚡</div>
+        <h3>Bracket Not Generated Yet</h3>
+        <p>
+          The bracket will be created once registration closes and all players are checked in.
+        </p>
+        {% if user.is_staff %}
+          <a href="{% url 'admin:tournaments_tournament_changelist' %}" class="btn btn-primary mt-6">
+            Go to Admin → Generate Bracket
+          </a>
+        {% endif %}
+      </div>
+
+    {% else %}
+
+      <!-- LEGEND -->
+      <div class="flex gap-4 mb-6" style="flex-wrap:wrap; font-size:0.82rem; color:var(--text-2)">
+        <span style="display:flex;align-items:center;gap:6px">
+          <span style="width:10px;height:10px;border-radius:50%;background:var(--win);display:inline-block"></span>
+          Winner
+        </span>
+        <span style="display:flex;align-items:center;gap:6px">
+          <span style="width:10px;height:10px;border-radius:50%;background:var(--text-3);display:inline-block;opacity:.5"></span>
+          Eliminated
+        </span>
+        <span style="display:flex;align-items:center;gap:6px">
+          <span style="width:10px;height:10px;border-radius:50%;background:var(--accent-2);display:inline-block"></span>
+          Bye (auto-advanced)
+        </span>
+        {% if user.is_staff %}
+          <span style="display:flex;align-items:center;gap:6px; color:var(--accent)">
+            ⚡ Admin: click "Report" on pending matches
+          </span>
+        {% endif %}
+      </div>
+
+      <!-- BRACKET SCROLL CONTAINER -->
+      <div class="bracket-scroll">
+        <div class="bracket-grid">
+
+          {% for round_num, matches in data.rounds.items %}
+
+            <!-- ROUND COLUMN -->
+            <div class="bracket-round">
+
+              <div class="round-label">
+                {% if round_num == data.total_rounds %}
+                  🏆 Grand Final
+                {% elif round_num == data.total_rounds|add:"-1" %}
+                  Semi-final
+                {% elif round_num == data.total_rounds|add:"-2" %}
+                  Quarter-final
+                {% else %}
+                  Round {{ round_num }}
+                {% endif %}
+              </div>
+
+              <div class="round-matches">
+                {% for match in matches %}
+                  <div class="bracket-match {% if match.status == 'complete' or match.status == 'bye' %}done{% endif %}">
+
+                    <!-- PLAYER 1 -->
+                    <div class="bracket-player
+                      {% if match.winner == match.player1 %}winner
+                      {% elif match.winner and match.winner != match.player1 %}loser
+                      {% elif not match.player1 %}tbd
+                      {% endif %}">
+                      <span class="bracket-player-name">
+                        {{ match.player1.game_tag|default:"TBD" }}
+                      </span>
+                      <span class="bracket-score">{{ match.score_p1 }}</span>
+                    </div>
+
+                    <!-- PLAYER 2 -->
+                    <div class="bracket-player
+                      {% if match.winner == match.player2 %}winner
+                      {% elif match.winner and match.winner != match.player2 %}loser
+                      {% elif not match.player2 %}tbd
+                      {% endif %}">
+                      <span class="bracket-player-name">
+                        {{ match.player2.game_tag|default:"TBD" }}
+                      </span>
+                      <span class="bracket-score">{{ match.score_p2 }}</span>
+                    </div>
+
+                    <!-- MATCH FOOTER -->
+                    <div class="bracket-match-foot">
+                      <span class="match-format">BO{{ match.best_of }}</span>
+
+                      <div style="display:flex; align-items:center; gap:6px">
+                        {% if match.status == 'complete' or match.status == 'bye' %}
+                          <span class="match-status-dot done"></span>
+                        {% elif match.status == 'live' %}
+                          <span class="match-status-dot live"></span>
+                        {% else %}
+                          <span class="match-status-dot"></span>
+                        {% endif %}
+
+                        {% if user.is_staff and match.status == 'pending' and match.player1 and match.player2 %}
+                          <a href="{% url 'report_result' match.pk %}" class="btn-report">Report</a>
+                        {% endif %}
+                      </div>
+                    </div>
+
+                  </div>
+                {% endfor %}
+              </div>
+
+            </div>
+
+            <!-- CONNECTOR LINES between rounds -->
+            {% if not forloop.last %}
+              <div style="width:24px; display:flex; flex-direction:column; justify-content:space-around; padding-top:53px">
+                {% for match in matches %}
+                  {% if forloop.counter|divisibleby:2 %}
+                    {# top of pair #}
+                  {% endif %}
+                {% endfor %}
+              </div>
+            {% endif %}
+
+          {% endfor %}
+
+        </div>
+      </div>
+
+      <!-- CHAMPION DISPLAY -->
+      {% with last_round=data.rounds|last %}
+        {% for match in last_round %}
+          {% if match.winner %}
+            <div style="margin-top:48px; text-align:center; padding:32px; background:rgba(240,165,0,.06); border:1px solid rgba(240,165,0,.2); border-radius:var(--radius-lg)">
+              <div style="font-family:var(--font-head); font-size:0.8rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--pending); margin-bottom:8px">
+                🏆 Tournament Champion
+              </div>
+              <div style="font-family:var(--font-head); font-size:3rem; font-weight:900; text-transform:uppercase; letter-spacing:.04em; color:#fff">
+                {{ match.winner.game_tag }}
+              </div>
+            </div>
+          {% endif %}
+        {% endfor %}
+      {% endwith %}
+
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  // Auto-refresh bracket every 30 seconds if tournament is live
+  {% if tournament.status == 'live' %}
+    setTimeout(() => location.reload(), 30000);
+  {% endif %}
+</script>
+{% endblock %}
