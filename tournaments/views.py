@@ -64,3 +64,4 @@ def report_result(request, match_id):
         messages.success(request, "Result saved and bracket updated!")
         return redirect('bracket_view', pk=match.bracket.tournament.pk)
     return render(request, 'tournaments/report_result.html', {'match': match})
+    

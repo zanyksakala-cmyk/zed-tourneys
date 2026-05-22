@@ -29,7 +29,7 @@
         <div class="flex gap-3 mt-6" style="flex-wrap:wrap;">
           {% if tournament.bracket_generated %}
             <a href="{% url 'bracket_view' tournament.pk %}" class="btn btn-primary">
-              ⚡ View Bracket
+               View Bracket
             </a>
           {% endif %}
 
@@ -181,7 +181,7 @@
                     <div class="form-hint">The name your opponents will see in the bracket.</div>
                   </div>
                   <button type="submit" class="btn btn-primary btn-block btn-lg">
-                    🎮 Join Tournament
+                     Join Tournament
                   </button>
                 </form>
               {% endif %}
@@ -195,7 +195,7 @@
 
           {% elif tournament.status == 'live' and tournament.bracket_generated %}
             <a href="{% url 'bracket_view' tournament.pk %}" class="btn btn-primary btn-block btn-lg">
-              ⚡ View Live Bracket
+               View Live Bracket
             </a>
 
           {% elif tournament.status == 'complete' %}
